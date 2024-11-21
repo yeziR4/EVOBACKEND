@@ -6,7 +6,7 @@ CORS(app)
 
 @app.route("/")
 def home():
-    return "Flask app is running in a clean environment!"
+    return "Flask app is running in a clean environment"
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
