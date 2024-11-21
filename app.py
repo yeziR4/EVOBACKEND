@@ -6,31 +6,42 @@ CORS(app)
 
 @app.route("/")
 def home():
-    return "Flask app is running in a clean environment"
+    return "Flask app is running in a clean environment!"
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+    try:
+        # Get JSON data from the request
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
 
-    playlists = data.get("playlists", [])
-    tracks = data.get("tracks", [])
+        playlists = data.get("playlists", [])
+        tracks = data.get("tracks", [])
 
-    # Example Analysis: Count tracks per playlist
-    analysis = {
-        "total_playlists": len(playlists),
-        "total_tracks": len(tracks),
-        "playlists": [
-            {
-                "name": playlist["name"],
-                "track_count": sum(1 for track in tracks if track["id"] in [t["id"] for t in tracks]),
-            }
-            for playlist in playlists
-        ],
-    }
+        # Validate data
+        if not isinstance(playlists, list) or not isinstance(tracks, list):
+            return jsonify({"error": "Invalid data format"}), 400
 
-    return jsonify(analysis)
+        # Example Analysis: Count tracks per playlist
+        analysis = {
+            "total_playlists": len(playlists),
+            "total_tracks": len(tracks),
+            "playlists": [
+                {
+                    "name": playlist["name"],
+                    "track_count": sum(
+                        1 for track in tracks if track.get("playlist_id") == playlist.get("id")
+                    ),
+                }
+                for playlist in playlists
+            ],
+        }
+
+        return jsonify(analysis)
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
