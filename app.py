@@ -11,15 +11,16 @@ def home():
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
+    def analyze():
     try:
         data = request.get_json()
 
-        # Validate input
-        if not data or "playlists" not in data or "tracks" not in data:
+        # More flexible validation
+        if not data or "playlists" not in data:
             return jsonify({"error": "Invalid input data"}), 400
 
-        playlists = data["playlists"]
-        tracks_data = data["tracks"]
+        playlists = data.get("playlists", [])
+        tracks_data = data.get("tracks", [])
 
         # Organize data
         tracks_by_year = defaultdict(list)
