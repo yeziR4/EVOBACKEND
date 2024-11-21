@@ -11,7 +11,7 @@ def home():
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    def analyze():
+    
     try:
         data = request.get_json()
 
