@@ -44,13 +44,88 @@ def analyze():
             return list(set.intersection(*artists_by_year.values()))
 
         def genre_consistency_and_evolution():
-            """Analyze genre trends across years."""
-            genres_by_year = {
-                year: [genre for track in tracks for genre in track.get("genres", [])]
-                for year, tracks in tracks_by_year.items()
+    """
+    Analyze genre trends across years with enhanced metrics:
+    - Genre frequency per year (as percentage)
+    - Year-over-year changes
+    - Dominant genres per year
+    - Genre trajectory (rising/declining/stable)
+    """
+    # Initialize data structures
+    genres_by_year = {
+        year: [genre for track in tracks for genre in track.get("genres", [])]
+        for year, tracks in tracks_by_year.items()
+    }
+    
+    analysis = {}
+    
+    for year, genres in genres_by_year.items():
+        total_genres = len(genres)
+        if total_genres == 0:
+            continue
+            
+        # Calculate frequency and percentage for each genre
+        genre_counts = Counter(genres)
+        genre_stats = {
+            genre: {
+                "count": count,
+                "percentage": round((count / total_genres) * 100, 2)
             }
-            return {year: Counter(genres) for year, genres in genres_by_year.items()}
-
+            for genre, count in genre_counts.items()
+        }
+        
+        # Find top genres (those representing >10% of tracks)
+        significant_genres = {
+            genre: stats
+            for genre, stats in genre_stats.items()
+            if stats["percentage"] > 10
+        }
+        
+        analysis[year] = {
+            "all_genres": genre_stats,
+            "top_genres": significant_genres,
+            "total_tracks_with_genres": total_genres
+        }
+    
+    # Calculate year-over-year changes and trends
+    sorted_years = sorted(analysis.keys())
+    genre_trends = {}
+    
+    # Get all unique genres across all years
+    all_genres = set()
+    for year_data in analysis.values():
+        all_genres.update(year_data["all_genres"].keys())
+    
+    for genre in all_genres:
+        trajectory = []
+        percentages = []
+        
+        for year in sorted_years:
+            percentage = analysis[year]["all_genres"].get(genre, {}).get("percentage", 0)
+            percentages.append(percentage)
+            
+        # Calculate trend
+        if len(percentages) > 1:
+            changes = [percentages[i] - percentages[i-1] for i in range(1, len(percentages))]
+            avg_change = sum(changes) / len(changes)
+            
+            if avg_change > 1:  # More than 1% average increase
+                trend = "rising"
+            elif avg_change < -1:  # More than 1% average decrease
+                trend = "declining"
+            else:
+                trend = "stable"
+                
+            genre_trends[genre] = {
+                "trend": trend,
+                "avg_change": round(avg_change, 2),
+                "percentages_by_year": dict(zip(sorted_years, percentages))
+            }
+    
+    # Add trends to final analysis
+    analysis["trends"] = genre_trends
+    
+    return analysis
         def persisting_songs():
             """Identify songs appearing in multiple playlists."""
             track_counts = Counter(track["name"] for track in all_tracks)
