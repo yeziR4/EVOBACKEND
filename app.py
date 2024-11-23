@@ -92,7 +92,6 @@ def analyze():
                     "repeat_artists": len(unique_artists & previous_artists)
                 }
             return result
-
         def artist_growth():
             artist_year_counts = defaultdict(Counter)
             for year, tracks in tracks_by_year.items():
@@ -113,6 +112,9 @@ def analyze():
 
             top_growing_artists = sorted(artist_growth.items(), key=lambda x: x[1], reverse=True)[:5]
             top_declining_artists = sorted(artist_decline.items(), key=lambda x: x[1], reverse=True)[:5]
+
+            # Remove overlapping artists
+            top_declining_artists = [artist for artist in top_declining_artists if artist[0] not in [artist[0] for artist in top_growing_artists]]
 
             return top_growing_artists, top_declining_artists
 
@@ -146,7 +148,6 @@ def analyze():
             "new_vs_old": new_vs_old(),
             "top_growing_artists": artist_growth()[0],
             "top_declining_artists": artist_growth()[1],
-            "rare_songs_and_artists": rare_songs_and_artists(),
             "artists_through_features": artists_through_features(),
         }
 
