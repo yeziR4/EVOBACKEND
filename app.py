@@ -130,14 +130,14 @@ def analyze():
             rare_artists = [artist for artist, years in artist_years.items() if len(years) == 1]
             return {"rare_songs": rare_songs, "rare_artists": rare_artists}
 
-      def artists_through_features():
-        feature_counts = Counter()
-        for track in all_tracks:
-            main_artist = track["artists"][0]
-            feature_artists = track["artists"][1:]
-        for artist in feature_artists:
-            feature_counts[artist] += 1
-            return feature_counts
+        def artists_through_features():
+            feature_counts = Counter()
+            for track in all_tracks:
+                main_artist = track["artists"][0]
+                feature_artists = track["artists"][1:]
+                for artist in feature_artists:
+                    feature_counts[artist] += 1
+                return feature_counts
 
         analysis_result = {
             "constant_artists": constant_artists_across_years(),
