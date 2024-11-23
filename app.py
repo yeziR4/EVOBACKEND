@@ -133,10 +133,18 @@ def analyze():
         def artists_through_features():
             feature_counts = Counter()
             for track in all_tracks:
-                main_artist = track["artists"][0]
-                feature_artists = track["artists"][1:]
+                artists = track["artists"].split(",")  # Assuming artists are comma-separated
+                main_artist = artists[0]
+                feature_artists = artists[1:]
                 for artist in feature_artists:
                     feature_counts[artist] += 1
+                print(f"Feature counts: {feature_counts}")  # Check function execution
+
+            # Print top 3 featured artists
+            top_3_featured_artists = sorted(feature_counts.items(), key=lambda x: x[1], reverse=True)[:3]
+            for artist, count in top_3_featured_artists:
+                print(f"Top featured artist: {artist}")
+
             return feature_counts
 
       
@@ -150,14 +158,12 @@ def analyze():
             "persisting_songs": persisting_songs(),
             "abandoned": abandoned_artists_or_genres(),
             "consistent_songs": most_consistent_songs(),
-            "new_vs_old": artists_through_features(),
+            "new_vs_old": new_vs_old(),
             "top_growing_artists": artist_growth()[0],
             "top_declining_artists": artist_growth()[1],
             "artists_through_features": artists_through_features(),
         }
-        top_3_featured_artists = sorted(analysis_result["artists_through_features"].items(), key=lambda x: x[1], reverse=True)[:3]
-        for artist, count in top_3_featured_artists:
-            print(artist)
+        
         return jsonify(analysis_result)
    
     except Exception as e:
