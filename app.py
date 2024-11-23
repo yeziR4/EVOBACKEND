@@ -14,14 +14,12 @@ def analyze():
     try:
         data = request.get_json()
 
-        # More flexible validation
         if not data or "playlists" not in data:
             return jsonify({"error": "Invalid input data"}), 400
 
         playlists = data.get("playlists", [])
         tracks_data = data.get("tracks", [])
 
-        # Organize data
         tracks_by_year = defaultdict(list)
         all_tracks = []
 
@@ -31,9 +29,7 @@ def analyze():
                 tracks_by_year[year].append(track)
             all_tracks.append(track)
 
-        # Analysis Functions
         def constant_artists_across_years():
-            """Identify artists that appear in all playlists."""
             artists_by_year = {
                 year: set(artist for track in tracks for artist in track["artists"])
                 for year, tracks in tracks_by_year.items()
@@ -43,7 +39,6 @@ def analyze():
             return list(set.intersection(*artists_by_year.values()))
 
         def genre_consistency_and_evolution():
-            """Analyze genre trends across years."""
             genres_by_year = {
                 year: [genre for track in tracks for genre in track.get("genres", [])]
                 for year, tracks in tracks_by_year.items()
@@ -51,12 +46,10 @@ def analyze():
             return {year: Counter(genres) for year, genres in genres_by_year.items()}
 
         def persisting_songs():
-            """Identify songs appearing in multiple playlists."""
             track_counts = Counter(track["name"] for track in all_tracks)
             return [track for track, count in track_counts.items() if count > 1]
 
         def abandoned_artists_or_genres():
-            """Find artists or genres that declined over time."""
             artists_by_year = {
                 year: [artist for track in tracks for artist in track["artists"]]
                 for year, tracks in tracks_by_year.items()
@@ -78,14 +71,12 @@ def analyze():
             return {"artists": list(abandoned_artists), "genres": list(abandoned_genres)}
 
         def most_consistent_songs():
-            """Find songs appearing every year."""
             songs_by_year = {year: set(track["name"] for track in tracks) for year, tracks in tracks_by_year.items()}
             if not songs_by_year:
                 return []
             return list(set.intersection(*songs_by_year.values()))
 
         def new_vs_old():
-            """Calculate proportion of new vs. repeat songs/artists for each year."""
             result = {}
             for year, tracks in tracks_by_year.items():
                 unique_songs = set(track["name"] for track in tracks)
@@ -109,27 +100,23 @@ def analyze():
                     for artist in track["artists"]:
                         artist_year_counts[artist][year] += 1
 
-                    artist_growth = {}
-                    artist_decline = {}
-                    for artist, year_counts in artist_year_counts.items():
-                        years = sorted(year_counts.keys())
-                        for i in range(1, len(years)):
-                            growth_rate = (year_counts[years[i]] - year_counts[years[i-1]]) / year_counts[years[i-1]]) * 100
-                            if growth_rate > 0:
-                                artist_growth[artist] = growth_rate
-                            else:
-                                artist_decline[artist] = abs(growth_rate)
+            artist_growth = {}
+            artist_decline = {}
+            for artist, year_counts in artist_year_counts.items():
+                years = sorted(year_counts.keys())
+                for i in range(1, len(years)):
+                    growth_rate = (year_counts[years[i]] - year_counts[years[i-1]]) / (year_counts[years[i-1]] or 1) * 100
+                    if growth_rate > 0:
+                        artist_growth[artist] = growth_rate
+                    else:
+                        artist_decline[artist] = abs(growth_rate)
 
-                    top_growing_artists = sorted(artist_growth.items(), key=lambda x: x[1], reverse=True)[:5]
-                    top_declining_artists = sorted(artist_decline.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_growing_artists = sorted(artist_growth.items(), key=lambda x: x[1], reverse=True)[:5]
+            top_declining_artists = sorted(artist_decline.items(), key=lambda x: x[1], reverse=True)[:5]
 
-                    return jsonify({
-        # ... (existing analysis results)
-        "top_growing_artists": top_growing_artists,
-        "top_declining_artists": top_declining_artists
-    })
+            return top_growing_artists, top_declining_artists
+
         def rare_songs_and_artists():
-            """Find songs and artists that appeared in only one year."""
             song_years = defaultdict(list)
             artist_years = defaultdict(list)
             for year, tracks in tracks_by_year.items():
@@ -142,7 +129,6 @@ def analyze():
             return {"rare_songs": rare_songs, "rare_artists": rare_artists}
 
         def artists_through_features():
-            """Identify artists that appear mostly through features."""
             feature_counts = Counter()
             for track in all_tracks:
                 main_artist = track["artists"][0]
@@ -151,7 +137,6 @@ def analyze():
                     feature_counts[artist] += 1
             return {artist: count for artist, count in feature_counts.items() if count > 0}
 
-        # Aggregate Results
         analysis_result = {
             "constant_artists": constant_artists_across_years(),
             "genre_consistency": genre_consistency_and_evolution(),
@@ -159,7 +144,8 @@ def analyze():
             "abandoned": abandoned_artists_or_genres(),
             "consistent_songs": most_consistent_songs(),
             "new_vs_old": new_vs_old(),
-            "artist_growth": artist_growth(),
+            "top_growing_artists": artist_growth()[0],
+            "top_declining_artists": artist_growth()[1],
             "rare_songs_and_artists": rare_songs_and_artists(),
             "artists_through_features": artists_through_features(),
         }
@@ -169,7 +155,6 @@ def analyze():
     except Exception as e:
         app.logger.error(f"Error processing request: {str(e)}")
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
