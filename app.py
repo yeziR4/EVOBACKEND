@@ -150,7 +150,7 @@ def analyze():
             "persisting_songs": persisting_songs(),
             "abandoned": abandoned_artists_or_genres(),
             "consistent_songs": most_consistent_songs(),
-            "new_vs_old": new_vs_old(),
+            "new_vs_old": artists_through_features(),
             "top_growing_artists": artist_growth()[0],
             "top_declining_artists": artist_growth()[1],
             "artists_through_features": artists_through_features(),
