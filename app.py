@@ -11,7 +11,6 @@ def home():
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    
     try:
         data = request.get_json()
 
@@ -85,6 +84,60 @@ def analyze():
                 return []
             return list(set.intersection(*songs_by_year.values()))
 
+        def new_vs_old():
+            """Calculate proportion of new vs. repeat songs/artists for each year."""
+            result = {}
+            for year, tracks in tracks_by_year.items():
+                unique_songs = set(track["name"] for track in tracks)
+                unique_artists = set(artist for track in tracks for artist in track["artists"])
+                previous_songs = set(track["name"] for year_key, tracks_key in tracks_by_year.items() if year_key < year for track in tracks_key)
+                previous_artists = set(artist for year_key, tracks_key in tracks_by_year.items() if year_key < year for track in tracks_key for artist in track["artists"])
+                new_songs = unique_songs - previous_songs
+                new_artists = unique_artists - previous_artists
+                result[year] = {
+                    "new_songs": len(new_songs),
+                    "repeat_songs": len(unique_songs & previous_songs),
+                    "new_artists": len(new_artists),
+                    "repeat_artists": len(unique_artists & previous_artists)
+                }
+            return result
+
+        def artist_growth():
+            """Track artists' growth over the years."""
+            artist_presence = defaultdict(Counter)
+            for year, tracks in tracks_by_year.items():
+                for track in tracks:
+                    for artist in track["artists"]:
+                        artist_presence[artist][year] += 1
+            growth = {}
+            for artist, years in artist_presence.items():
+                sorted_years = sorted(years.items())
+                growth[artist] = {year: count for year, count in sorted_years}
+            return growth
+
+        def rare_songs_and_artists():
+            """Find songs and artists that appeared in only one year."""
+            song_years = defaultdict(list)
+            artist_years = defaultdict(list)
+            for year, tracks in tracks_by_year.items():
+                for track in tracks:
+                    song_years[track["name"]].append(year)
+                    for artist in track["artists"]:
+                        artist_years[artist].append(year)
+            rare_songs = [song for song, years in song_years.items() if len(years) == 1]
+            rare_artists = [artist for artist, years in artist_years.items() if len(years) == 1]
+            return {"rare_songs": rare_songs, "rare_artists": rare_artists}
+
+        def artists_through_features():
+            """Identify artists that appear mostly through features."""
+            feature_counts = Counter()
+            for track in all_tracks:
+                main_artist = track["artists"][0]
+                feature_artists = track["artists"][1:]
+                for artist in feature_artists:
+                    feature_counts[artist] += 1
+            return {artist: count for artist, count in feature_counts.items() if count > 0}
+
         # Aggregate Results
         analysis_result = {
             "constant_artists": constant_artists_across_years(),
@@ -92,6 +145,10 @@ def analyze():
             "persisting_songs": persisting_songs(),
             "abandoned": abandoned_artists_or_genres(),
             "consistent_songs": most_consistent_songs(),
+            "new_vs_old": new_vs_old(),
+            "artist_growth": artist_growth(),
+            "rare_songs_and_artists": rare_songs_and_artists(),
+            "artists_through_features": artists_through_features(),
         }
 
         return jsonify(analysis_result)
