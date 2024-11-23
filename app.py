@@ -131,21 +131,28 @@ def analyze():
             return {"rare_songs": rare_songs, "rare_artists": rare_artists}
 
         def artists_through_features():
-            feature_counts = Counter()
-            for track in all_tracks:
-                artists = track["artists"].split(",")  # Assuming artists are comma-separated
-                main_artist = artists[0]
-                feature_artists = artists[1:]
-                for artist in feature_artists:
-                    feature_counts[artist] += 1
-                print(f"Feature counts: {feature_counts}")  # Check function execution
+                feature_counts = Counter()
+                for track in all_tracks:
+                    if not track["artists"]:  # Check for empty list
+                        continue
 
-            # Print top 3 featured artists
-            top_3_featured_artists = sorted(feature_counts.items(), key=lambda x: x[1], reverse=True)[:3]
-            for artist, count in top_3_featured_artists:
-                print(f"Top featured artist: {artist}")
+                    if isinstance(track["artists"], list):
+                        artists = track["artists"]
+                    else:
+                        artists = track["artists"].split(",")  # Split if it's a string
+                    print(f"Artist data: {artists}")
 
-            return feature_counts
+                    main_artist = artists[0]
+                    feature_artists = artists[1:]
+                    for artist in feature_artists:
+                        feature_counts[artist] += 1
+                    print(f"Feature counts: {feature_counts}")  # Check function execution
+
+                # ... other function logic
+
+                return feature_counts
+
+         
 
       
          
