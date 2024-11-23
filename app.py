@@ -103,18 +103,31 @@ def analyze():
             return result
 
         def artist_growth():
-            """Track artists' growth over the years."""
-            artist_presence = defaultdict(Counter)
+            artist_year_counts = defaultdict(Counter)
             for year, tracks in tracks_by_year.items():
                 for track in tracks:
                     for artist in track["artists"]:
-                        artist_presence[artist][year] += 1
-            growth = {}
-            for artist, years in artist_presence.items():
-                sorted_years = sorted(years.items())
-                growth[artist] = {year: count for year, count in sorted_years}
-            return growth
+                        artist_year_counts[artist][year] += 1
 
+                    artist_growth = {}
+                    artist_decline = {}
+                    for artist, year_counts in artist_year_counts.items():
+                        years = sorted(year_counts.keys())
+                        for i in range(1, len(years)):
+                            growth_rate = (year_counts[years[i]] - year_counts[years[i-1]]) / year_counts[years[i-1]]) * 100
+                            if growth_rate > 0:
+                                artist_growth[artist] = growth_rate
+                            else:
+                                artist_decline[artist] = abs(growth_rate)
+
+                    top_growing_artists = sorted(artist_growth.items(), key=lambda x: x[1], reverse=True)[:5]
+                    top_declining_artists = sorted(artist_decline.items(), key=lambda x: x[1], reverse=True)[:5]
+
+                    return jsonify({
+        # ... (existing analysis results)
+        "top_growing_artists": top_growing_artists,
+        "top_declining_artists": top_declining_artists
+    })
         def rare_songs_and_artists():
             """Find songs and artists that appeared in only one year."""
             song_years = defaultdict(list)
