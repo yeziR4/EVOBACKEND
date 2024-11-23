@@ -137,7 +137,12 @@ def analyze():
                 feature_artists = track["artists"][1:]
                 for artist in feature_artists:
                     feature_counts[artist] += 1
-                return feature_counts
+            return feature_counts
+
+      
+         
+       
+
 
         analysis_result = {
             "constant_artists": constant_artists_across_years(),
@@ -150,9 +155,11 @@ def analyze():
             "top_declining_artists": artist_growth()[1],
             "artists_through_features": artists_through_features(),
         }
-
+        top_3_featured_artists = sorted(analysis_result["artists_through_features"].items(), key=lambda x: x[1], reverse=True)[:3]
+        for artist, count in top_3_featured_artists:
+            print(artist)
         return jsonify(analysis_result)
-
+   
     except Exception as e:
         app.logger.error(f"Error processing request: {str(e)}")
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
