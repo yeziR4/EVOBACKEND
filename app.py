@@ -49,26 +49,7 @@ def analyze():
             track_counts = Counter(track["name"] for track in all_tracks)
             return [track for track, count in track_counts.items() if count > 1]
 
-        def abandoned_artists_or_genres():
-            artists_by_year = {
-                year: [artist for track in tracks for artist in track["artists"]]
-                for year, tracks in tracks_by_year.items()
-            }
-            all_artists = set(artist for artists in artists_by_year.values() for artist in artists)
-            abandoned_artists = {
-                artist for artist in all_artists if sum(artist in artists for artists in artists_by_year.values()) == 1
-            }
-
-            genres_by_year = {
-                year: [genre for track in tracks for genre in track.get("genres", [])]
-                for year, tracks in tracks_by_year.items()
-            }
-            all_genres = set(genre for genres in genres_by_year.values() for genre in genres)
-            abandoned_genres = {
-                genre for genre in all_genres if sum(genre in genres for genres in genres_by_year.values()) == 1
-            }
-
-            return {"artists": list(abandoned_artists), "genres": list(abandoned_genres)}
+      
 
         def most_consistent_songs():
             songs_by_year = {year: set(track["name"] for track in tracks) for year, tracks in tracks_by_year.items()}
@@ -76,22 +57,8 @@ def analyze():
                 return []
             return list(set.intersection(*songs_by_year.values()))
 
-        def new_vs_old():
-            result = {}
-            for year, tracks in tracks_by_year.items():
-                unique_songs = set(track["name"] for track in tracks)
-                unique_artists = set(artist for track in tracks for artist in track["artists"])
-                previous_songs = set(track["name"] for year_key, tracks_key in tracks_by_year.items() if year_key < year for track in tracks_key)
-                previous_artists = set(artist for year_key, tracks_key in tracks_by_year.items() if year_key < year for track in tracks_key for artist in track["artists"])
-                new_songs = unique_songs - previous_songs
-                new_artists = unique_artists - previous_artists
-                result[year] = {
-                    "new_songs": len(new_songs),
-                    "repeat_songs": len(unique_songs & previous_songs),
-                    "new_artists": len(new_artists),
-                    "repeat_artists": len(unique_artists & previous_artists)
-                }
-            return result
+       
+            
         def artist_growth():
             artist_year_counts = defaultdict(Counter)
             for year, tracks in tracks_by_year.items():
@@ -118,17 +85,7 @@ def analyze():
 
             return top_growing_artists, top_declining_artists
 
-        def rare_songs_and_artists():
-            song_years = defaultdict(list)
-            artist_years = defaultdict(list)
-            for year, tracks in tracks_by_year.items():
-                for track in tracks:
-                    song_years[track["name"]].append(year)
-                    for artist in track["artists"]:
-                        artist_years[artist].append(year)
-            rare_songs = [song for song, years in song_years.items() if len(years) == 1]
-            rare_artists = [artist for artist, years in artist_years.items() if len(years) == 1]
-            return {"rare_songs": rare_songs, "rare_artists": rare_artists}
+       
 
         def artists_through_features():
                 feature_counts = Counter()
@@ -152,27 +109,26 @@ def analyze():
 
                 return feature_counts
 
-         
 
-      
-         
-       
+
+
+
+
 
 
         analysis_result = {
             "constant_artists": constant_artists_across_years(),
             "genre_consistency": genre_consistency_and_evolution(),
             "persisting_songs": persisting_songs(),
-            "abandoned": abandoned_artists_or_genres(),
+            
             "consistent_songs": most_consistent_songs(),
-            "new_vs_old": new_vs_old(),
             "top_growing_artists": artist_growth()[0],
             "top_declining_artists": artist_growth()[1],
             "artists_through_features": artists_through_features(),
         }
-        
+
         return jsonify(analysis_result)
-   
+
     except Exception as e:
         app.logger.error(f"Error processing request: {str(e)}")
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
